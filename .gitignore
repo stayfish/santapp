@@ -1,0 +1,6 @@
+# RULER datasets, generated prompts, and Hugging Face cache
+/data/ruler/
+
+# Python bytecode
+__pycache__/
+*.py[cod]

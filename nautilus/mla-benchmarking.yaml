@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: santapp
+  namespace: ucsb-opus-lab
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mla-benchmarking
+  namespace: ucsb-opus-lab
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 172800
+  template:
+    metadata:
+      labels:
+        app: mla-benchmarking
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: clone-source
+          image: alpine/git:2.47.2
+          args:
+            - clone
+            - --depth=1
+            - --branch=main
+            - https://github.com/stayfish/santapp.git
+            - /opt/santapp
+          volumeMounts:
+            - name: source
+              mountPath: /opt/santapp
+      containers:
+        - name: benchmark
+          image: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+          command:
+            - /bin/bash
+            - -lc
+          args:
+            - >-
+              python -m pip install --no-cache-dir "lm-eval[datasets]"
+              && python /opt/santapp/exp/mla_benchmarking.py
+          env:
+            - name: BENCHMARK_ROOT
+              value: /workspace
+            - name: HF_HUB_ENABLE_HF_TRANSFER
+              value: "0"
+          resources:
+            requests:
+              cpu: "4"
+              memory: 48Gi
+              ephemeral-storage: 20Gi
+              nvidia.com/a40: "1"
+            limits:
+              cpu: "8"
+              memory: 64Gi
+              ephemeral-storage: 20Gi
+              nvidia.com/a40: "1"
+          volumeMounts:
+            - name: source
+              mountPath: /opt/santapp
+              readOnly: true
+            - name: workspace
+              mountPath: /workspace
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: source
+          emptyDir: {}
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: santapp
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi
