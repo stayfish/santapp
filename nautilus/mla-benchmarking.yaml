@@ -25,19 +25,7 @@ spec:
         app: mla-benchmarking
     spec:
       restartPolicy: Never
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: topology.kubernetes.io/region
-                    operator: In
-                    values:
-                      - us-central
-                  - key: nvidia.com/gpu.product
-                    operator: In
-                    values:
-                      - NVIDIA-L40S
+      priorityClassName: opportunistic
       initContainers:
         - name: clone-source
           image: alpine/git:2.47.2
@@ -84,12 +72,12 @@ spec:
               cpu: "4"
               memory: 32Gi
               ephemeral-storage: 20Gi
-              nvidia.com/gpu: "1"
+              nvidia.com/a100: "1"
             limits:
               cpu: "4"
               memory: 32Gi
               ephemeral-storage: 20Gi
-              nvidia.com/gpu: "1"
+              nvidia.com/a100: "1"
           volumeMounts:
             - name: source
               mountPath: /opt/santapp
