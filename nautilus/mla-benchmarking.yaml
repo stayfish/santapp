@@ -55,7 +55,7 @@ spec:
           args:
             - >-
               python -m pip install --no-cache-dir
-              "typing_extensions>=4.15" "lm-eval[hf]"
+              "typing_extensions>=4.15" "transformers>=4.40,<5" "lm-eval[hf]"
               && python /opt/santapp/exp/mla_benchmarking.py --num-prompts 2
           env:
             - name: BENCHMARK_ROOT
