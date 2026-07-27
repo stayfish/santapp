@@ -34,6 +34,11 @@ spec:
                     operator: In
                     values:
                       - us-west
+                  - key: nvidia.com/gpu.product
+                    operator: In
+                    values:
+                      - NVIDIA-L40
+                      - NVIDIA-L40S
       initContainers:
         - name: clone-source
           image: alpine/git:2.47.2
@@ -80,12 +85,12 @@ spec:
               cpu: "4"
               memory: 64Gi
               ephemeral-storage: 20Gi
-              nvidia.com/a40: "1"
+              nvidia.com/gpu: "1"
             limits:
               cpu: "4"
               memory: 64Gi
               ephemeral-storage: 20Gi
-              nvidia.com/a40: "1"
+              nvidia.com/gpu: "1"
           volumeMounts:
             - name: source
               mountPath: /opt/santapp
