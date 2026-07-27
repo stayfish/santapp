@@ -25,6 +25,15 @@ spec:
         app: mla-benchmarking
     spec:
       restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/region
+                    operator: In
+                    values:
+                      - us-west
       initContainers:
         - name: clone-source
           image: alpine/git:2.47.2
@@ -57,6 +66,9 @@ spec:
               python -m pip install --no-cache-dir
               "typing_extensions>=4.15" "transformers>=4.40,<5"
               "lm-eval[hf,ruler]"
+              && sed -i
+              "s|http://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json|https://huggingface.co/datasets/namlh2004/hotpotqa/resolve/main/hotpot_dev_distractor_v1.json?download=true|"
+              /opt/conda/lib/python3.11/site-packages/lm_eval/tasks/ruler/qa_utils.py
               && python /opt/santapp/exp/mla_benchmarking.py --num-prompts 2
           env:
             - name: BENCHMARK_ROOT
