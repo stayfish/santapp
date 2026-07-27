@@ -54,8 +54,9 @@ spec:
             - -lc
           args:
             - >-
-              python -m pip install --no-cache-dir "lm-eval[datasets]"
-              && python /opt/santapp/exp/mla_benchmarking.py
+              python -m pip install --no-cache-dir
+              "typing_extensions>=4.15" "lm-eval[datasets]"
+              && python /opt/santapp/exp/mla_benchmarking.py --num-prompts 2
           env:
             - name: BENCHMARK_ROOT
               value: /workspace
