@@ -83,12 +83,12 @@ spec:
           resources:
             requests:
               cpu: "4"
-              memory: 64Gi
+              memory: 32Gi
               ephemeral-storage: 20Gi
               nvidia.com/gpu: "1"
             limits:
               cpu: "4"
-              memory: 64Gi
+              memory: 32Gi
               ephemeral-storage: 20Gi
               nvidia.com/gpu: "1"
           volumeMounts:
