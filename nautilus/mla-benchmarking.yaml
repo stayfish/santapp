@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: santapp-central
+  name: santapp
   namespace: ucsb-opus-lab
 spec:
-  storageClassName: rook-ceph-block-central
+  storageClassName: rook-ceph-block
   accessModes:
     - ReadWriteOnce
   resources:
@@ -25,7 +25,6 @@ spec:
         app: mla-benchmarking
     spec:
       restartPolicy: Never
-      priorityClassName: opportunistic
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -34,7 +33,7 @@ spec:
                   - key: topology.kubernetes.io/region
                     operator: In
                     values:
-                      - us-central
+                      - us-mountain
       initContainers:
         - name: clone-source
           image: alpine/git:2.47.2
@@ -81,12 +80,12 @@ spec:
               cpu: "4"
               memory: 32Gi
               ephemeral-storage: 20Gi
-              nvidia.com/a100: "1"
+              nvidia.com/a40: "1"
             limits:
               cpu: "4"
               memory: 32Gi
               ephemeral-storage: 20Gi
-              nvidia.com/a100: "1"
+              nvidia.com/a40: "1"
           volumeMounts:
             - name: source
               mountPath: /opt/santapp
@@ -100,7 +99,7 @@ spec:
           emptyDir: {}
         - name: workspace
           persistentVolumeClaim:
-            claimName: santapp-central
+            claimName: santapp
         - name: dshm
           emptyDir:
             medium: Memory
