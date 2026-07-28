@@ -56,7 +56,7 @@ spec:
               --context-length 4096
               --output /runtime/results/v100-smoke
               --model-args
-              "trust_remote_code=True,dtype=float16,load_in_8bit=True"
+              "trust_remote_code=True,dtype=float16,load_in_8bit=True,parallelize=True"
           env:
             - name: BENCHMARK_ROOT
               value: /runtime
