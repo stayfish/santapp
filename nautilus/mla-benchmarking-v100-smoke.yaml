@@ -50,6 +50,9 @@ spec:
               sed -i
               "s/past_key_values.seen_tokens/past_key_values.get_seq_length()/"
               /opt/models/DeepSeek-V2-Lite/modeling_deepseek.py
+              && sed -i
+              "s/max_cache_length = past_key_values.get_max_length()/max_cache_length = None/"
+              /opt/models/DeepSeek-V2-Lite/modeling_deepseek.py
               && python /opt/santapp/exp/mla_benchmarking.py
               --model /opt/models/DeepSeek-V2-Lite
               --num-prompts 2
