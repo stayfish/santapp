@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--batch-size", default="1")
     parser.add_argument("--num-prompts", type=int, default=20)
+    parser.add_argument("--context-length", type=int, default=8192)
     parser.add_argument("--tasks", nargs="+", default=list(DEFAULT_TASKS))
     parser.add_argument("--output", type=Path, default=REPO_ROOT / "results" / "ruler_8k")
     parser.add_argument("--apply-chat-template", action="store_true")
@@ -49,11 +50,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_command(args: argparse.Namespace) -> list[str]:
-    """Build the lm-eval command for prompts generated at 8192 tokens."""
+    """Build the lm-eval command for prompts at the requested context length."""
     if args.num_prompts <= 0:
         raise ValueError("--num-prompts must be positive")
+    if args.context_length <= 0:
+        raise ValueError("--context-length must be positive")
 
-    model_args = f"pretrained={args.model},max_length=8192"
+    model_args = f"pretrained={args.model},max_length={args.context_length}"
     if args.model_args:
         model_args += f",{args.model_args}"
 
@@ -68,7 +71,7 @@ def build_command(args: argparse.Namespace) -> list[str]:
         "--tasks",
         ",".join(args.tasks),
         "--metadata",
-        json.dumps({"max_seq_lengths": [8192]}),
+        json.dumps({"max_seq_lengths": [args.context_length]}),
         "--limit",
         str(args.num_prompts),
         "--batch_size",

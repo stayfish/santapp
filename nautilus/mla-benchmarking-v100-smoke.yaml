@@ -75,6 +75,7 @@ spec:
               /opt/conda/lib/python3.11/site-packages/lm_eval/tasks/ruler/qa_utils.py
               && python /opt/santapp/exp/mla_benchmarking.py
               --num-prompts 2
+              --context-length 4096
               --model-args
               "trust_remote_code=True,dtype=float16,load_in_8bit=True"
           env:
