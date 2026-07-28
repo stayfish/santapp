@@ -47,7 +47,10 @@ spec:
             - -lc
           args:
             - >-
-              python /opt/santapp/exp/mla_benchmarking.py
+              mkdir -p /runtime/compat/flash_attn
+              && touch /runtime/compat/flash_attn/__init__.py
+              && export PYTHONPATH="/runtime/compat:${PYTHONPATH}"
+              && python /opt/santapp/exp/mla_benchmarking.py
               --model /opt/models/DeepSeek-V2-Lite
               --num-prompts 2
               --context-length 4096
