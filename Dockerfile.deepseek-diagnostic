@@ -1,0 +1,8 @@
+FROM ghcr.io/stayfish/santapp-benchmark:deepseek-v2-lite-v1
+
+RUN python -m pip install --no-cache-dir --force-reinstall \
+      "transformers==4.40.2" \
+      "accelerate==0.29.3" \
+      "bitsandbytes==0.43.1"
+
+COPY exp/deepseek_diagnostic.py /opt/santapp/exp/deepseek_diagnostic.py
