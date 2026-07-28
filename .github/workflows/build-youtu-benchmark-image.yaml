@@ -49,5 +49,5 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE_NAME }}:youtu-llm-2b-v1
+            ${{ env.IMAGE_NAME }}:youtu-llm-2b-v2
             ${{ env.IMAGE_NAME }}:${{ github.sha }}

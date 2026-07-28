@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 ARG MODEL_REPO=tencent/Youtu-LLM-2B
-ARG MODEL_REVISION=main
+ARG MODEL_REVISION=32bca2ed101163fa19aca61695196989450466df
 
 RUN python -m pip install --no-cache-dir \
       "typing_extensions>=4.15" \
