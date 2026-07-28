@@ -1,0 +1,25 @@
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+
+ARG MODEL_REPO=tencent/Youtu-LLM-2B
+ARG MODEL_REVISION=main
+
+RUN python -m pip install --no-cache-dir \
+      "typing_extensions>=4.15" \
+      "transformers==4.57.1" \
+      "lm-eval[hf,ruler]" \
+    && sed -i \
+      "s|http://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json|https://huggingface.co/datasets/namlh2004/hotpotqa/resolve/main/hotpot_dev_distractor_v1.json?download=true|" \
+      /opt/conda/lib/python3.11/site-packages/lm_eval/tasks/ruler/qa_utils.py
+
+RUN mkdir -p /opt/models/Youtu-LLM-2B \
+    && python -c "from huggingface_hub import snapshot_download; snapshot_download('${MODEL_REPO}', revision='${MODEL_REVISION}', local_dir='/opt/models/Youtu-LLM-2B')" \
+    && rm -rf /opt/models/Youtu-LLM-2B/.cache /root/.cache
+
+COPY exp/mla_benchmarking.py /opt/santapp/exp/mla_benchmarking.py
+
+ENV BENCHMARK_ROOT=/runtime \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    HF_HUB_ENABLE_HF_TRANSFER=0
+
+WORKDIR /opt/santapp
