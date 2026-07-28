@@ -49,6 +49,5 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE_NAME }}:deepseek-v2-lite-v1
+            ${{ env.IMAGE_NAME }}:deepseek-v2-lite-v2
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
-

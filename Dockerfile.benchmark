@@ -5,7 +5,7 @@ ARG MODEL_REVISION=main
 
 RUN python -m pip install --no-cache-dir \
       "typing_extensions>=4.15" \
-      "transformers>=4.40,<5" \
+      "transformers==4.44.2" \
       "bitsandbytes>=0.45" \
       "lm-eval[hf,ruler]" \
     && sed -i \
@@ -31,4 +31,3 @@ ENV BENCHMARK_ROOT=/runtime \
     HF_HUB_ENABLE_HF_TRANSFER=0
 
 WORKDIR /opt/santapp
-
