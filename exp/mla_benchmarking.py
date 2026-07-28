@@ -15,6 +15,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(os.environ.get("BENCHMARK_ROOT", Path(__file__).resolve().parents[1]))
 RULER_DATA_DIR = REPO_ROOT / "data" / "ruler"
+MODEL_PRESETS = {
+    "DeepSeek-V2-Lite": "deepseek-ai/DeepSeek-V2-Lite",
+    "Youtu-LLM-2B": "tencent/Youtu-LLM-2B",
+}
 DEFAULT_TASKS = (
     "niah_single_2",      # single-needle retrieval
     "niah_multikey_2",    # multi-key retrieval
@@ -30,8 +34,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--model",
-        default="deepseek-ai/DeepSeek-V2-Lite",
-        help="Hugging Face model id or local model path.",
+        default="DeepSeek-V2-Lite",
+        help="Model preset (DeepSeek-V2-Lite or Youtu-LLM-2B), Hugging Face id, or local path.",
     )
     parser.add_argument("--backend", default="hf", help="lm-eval backend, e.g. hf or vllm.")
     parser.add_argument(
@@ -56,7 +60,8 @@ def build_command(args: argparse.Namespace) -> list[str]:
     if args.context_length <= 0:
         raise ValueError("--context-length must be positive")
 
-    model_args = f"pretrained={args.model},max_length={args.context_length}"
+    model = MODEL_PRESETS.get(args.model, args.model)
+    model_args = f"pretrained={model},max_length={args.context_length}"
     if args.model_args:
         model_args += f",{args.model_args}"
 
@@ -87,6 +92,22 @@ def build_command(args: argparse.Namespace) -> list[str]:
     return command
 
 
+def print_representative_sample(output_dir: Path) -> None:
+    """Print one compact generated sample without repeating its long input document."""
+    sample_files = sorted(output_dir.rglob("samples_*.jsonl"))
+    if not sample_files:
+        print("No sample JSONL file found.", flush=True)
+        return
+
+    with sample_files[0].open(encoding="utf-8") as sample_file:
+        sample = json.loads(sample_file.readline())
+    summary = {
+        key: sample.get(key)
+        for key in ("task_name", "doc_id", "target", "resps", "filtered_resps")
+    }
+    print(f"REPRESENTATIVE_SAMPLE={json.dumps(summary, ensure_ascii=False)}", flush=True)
+
+
 def main() -> None:
     """Run RULER and keep all downloaded/generated data inside this repository."""
     args = parse_args()
@@ -97,6 +118,7 @@ def main() -> None:
     env["HF_HOME"] = str(RULER_DATA_DIR / "huggingface")
     env["HF_DATASETS_CACHE"] = str(RULER_DATA_DIR / "huggingface" / "datasets")
     subprocess.run(build_command(args), check=True, env=env)
+    print_representative_sample(args.output)
 
 
 if __name__ == "__main__":
