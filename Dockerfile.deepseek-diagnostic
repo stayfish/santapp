@@ -1,7 +1,7 @@
 FROM ghcr.io/stayfish/santapp-benchmark:deepseek-v2-lite-v1
 
 RUN python -m pip install --no-cache-dir --no-deps --force-reinstall \
-      "transformers==4.40.2" \
+      "transformers==4.41.2" \
       "accelerate==0.29.3" \
       "bitsandbytes==0.43.1" \
       "tokenizers==0.19.1"

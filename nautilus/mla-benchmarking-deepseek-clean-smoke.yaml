@@ -27,7 +27,7 @@ spec:
                       - cph-dgx-node2.humboldt.edu
       containers:
         - name: benchmark
-          image: ghcr.io/stayfish/santapp-benchmark:deepseek-diagnostic-v2
+          image: ghcr.io/stayfish/santapp-benchmark:deepseek-diagnostic-v3
           imagePullPolicy: IfNotPresent
           args:
             - python
@@ -41,7 +41,7 @@ spec:
             - --output
             - /runtime/results/deepseek-clean-smoke
             - --model-args
-            - trust_remote_code=True,dtype=float16,load_in_4bit=True,bnb_4bit_quant_type=nf4,bnb_4bit_use_double_quant=True,attn_implementation=eager,parallelize=True,device_map_option=sequential
+            - trust_remote_code=True,dtype=float16,load_in_4bit=True,bnb_4bit_quant_type=nf4,bnb_4bit_use_double_quant=True,attn_implementation=eager,parallelize=True,device_map=sequential
           env:
             - {name: BENCHMARK_ROOT, value: /runtime}
             - {name: HF_HOME, value: /runtime/huggingface}
