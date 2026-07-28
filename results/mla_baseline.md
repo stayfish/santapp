@@ -23,6 +23,7 @@ Each subtask is scored from `0.0` to `1.0`, where `1.0` is the maximum score.
 | Model | Experiment configuration | `niah_single_2` | `niah_multikey_2` | `niah_multiquery` | `ruler_cwe` | `ruler_vt` | `ruler_qa_hotpot` |
 |---|---|---:|---:|---:|---:|---:|---:|
 | Youtu-LLM-2B | 20 prompts/task, 8192 context, FP16 | 1.00 | 0.85 | 0.95 | 0.245 | 0.07 | 0.10 |
+| DeepSeek-V2-Lite | 20 prompts/task, 8192 context, NF4 4-bit with FP16 compute | 1.00 | 0.90 | 0.925 | 0.435 | 0.58 | 0.40 |
 | Youtu-LLM-2B smoke | 2 prompts/task, 8192 context, FP16 | 1.00 | 1.00 | 1.00 | 0.05 | 0.10 | 0.00 |
 | DeepSeek-V2-Lite smoke | 2 prompts/task, 4096 context, NF4 4-bit, one 32 GB V100 | 1.00 | 1.00 | 0.50 | 0.80 | 0.70 | 0.00 |
 
@@ -34,6 +35,11 @@ directly with the 20-prompt baseline.
 
 The DeepSeek smoke test also differs in context length and quantization, so it
 is not a controlled model comparison against the Youtu baseline.
+
+The completed DeepSeek-V2-Lite NF4 experiment evaluated 120 samples in total
+on 32 GB V100 GPUs. Its unweighted mean across the evaluated six-task subset is
+approximately `0.707`. This is a quantized baseline; the separately submitted
+FP16 experiment is not included in this row unless it completes.
 
 ## Unevaluated RULER Tasks
 
