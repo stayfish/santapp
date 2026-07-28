@@ -85,13 +85,13 @@ spec:
           resources:
             requests:
               cpu: "4"
-              memory: 32Gi
-              ephemeral-storage: 20Gi
+              memory: 16Gi
+              ephemeral-storage: 10Gi
               nvidia.com/gpu: "1"
             limits:
               cpu: "4"
-              memory: 32Gi
-              ephemeral-storage: 20Gi
+              memory: 16Gi
+              ephemeral-storage: 10Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: source
@@ -110,4 +110,4 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 8Gi
+            sizeLimit: 4Gi
