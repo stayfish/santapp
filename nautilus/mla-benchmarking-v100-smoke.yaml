@@ -38,49 +38,25 @@ spec:
                     operator: In
                     values:
                       - Tesla-V100-SXM2-32GB
-      initContainers:
-        - name: clone-source
-          image: alpine/git:2.47.2
-          args:
-            - clone
-            - --depth=1
-            - --branch=main
-            - https://github.com/stayfish/santapp.git
-            - /opt/santapp
-          volumeMounts:
-            - name: source
-              mountPath: /opt/santapp
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-              ephemeral-storage: 1Gi
-            limits:
-              cpu: 100m
-              memory: 128Mi
-              ephemeral-storage: 1Gi
       containers:
         - name: benchmark
-          image: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+          image: ghcr.io/stayfish/santapp-benchmark:deepseek-v2-lite-v1
+          imagePullPolicy: Always
           command:
             - /bin/bash
             - -lc
           args:
             - >-
-              python -m pip install --no-cache-dir
-              "typing_extensions>=4.15" "transformers>=4.40,<5"
-              "bitsandbytes>=0.45" "lm-eval[hf,ruler]"
-              && sed -i
-              "s|http://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json|https://huggingface.co/datasets/namlh2004/hotpotqa/resolve/main/hotpot_dev_distractor_v1.json?download=true|"
-              /opt/conda/lib/python3.11/site-packages/lm_eval/tasks/ruler/qa_utils.py
-              && python /opt/santapp/exp/mla_benchmarking.py
+              python /opt/santapp/exp/mla_benchmarking.py
+              --model /opt/models/DeepSeek-V2-Lite
               --num-prompts 2
               --context-length 4096
+              --output /runtime/results/v100-smoke
               --model-args
               "trust_remote_code=True,dtype=float16,load_in_8bit=True"
           env:
             - name: BENCHMARK_ROOT
-              value: /workspace
+              value: /runtime
             - name: HF_HUB_ENABLE_HF_TRANSFER
               value: "0"
           resources:
@@ -95,19 +71,14 @@ spec:
               ephemeral-storage: 10Gi
               nvidia.com/gpu: "1"
           volumeMounts:
-            - name: source
-              mountPath: /opt/santapp
-              readOnly: true
-            - name: workspace
-              mountPath: /workspace
+            - name: runtime
+              mountPath: /runtime
             - name: dshm
               mountPath: /dev/shm
       volumes:
-        - name: source
-          emptyDir: {}
-        - name: workspace
-          persistentVolumeClaim:
-            claimName: santapp
+        - name: runtime
+          emptyDir:
+            sizeLimit: 10Gi
         - name: dshm
           emptyDir:
             medium: Memory

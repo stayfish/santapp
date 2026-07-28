@@ -1,0 +1,54 @@
+name: Build benchmark image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile.benchmark
+      - exp/mla_benchmarking.py
+      - .github/workflows/build-benchmark-image.yaml
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/santapp-benchmark
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free runner disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+          tool-cache: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.benchmark
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:deepseek-v2-lite-v1
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
