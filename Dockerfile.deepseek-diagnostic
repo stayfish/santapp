@@ -6,4 +6,9 @@ RUN python -m pip install --no-cache-dir --no-deps --force-reinstall \
       "bitsandbytes==0.43.1" \
       "tokenizers==0.19.1"
 
+RUN mkdir -p /opt/compat/flash_attn \
+    && touch /opt/compat/flash_attn/__init__.py
+
 COPY exp/deepseek_diagnostic.py /opt/santapp/exp/deepseek_diagnostic.py
+
+ENV PYTHONPATH=/opt/compat

@@ -36,5 +36,5 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE_NAME }}:deepseek-diagnostic-v1
+            ${{ env.IMAGE_NAME }}:deepseek-diagnostic-v2
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
