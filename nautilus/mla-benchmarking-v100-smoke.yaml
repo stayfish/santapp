@@ -47,7 +47,10 @@ spec:
             - -lc
           args:
             - >-
-              python /opt/santapp/exp/mla_benchmarking.py
+              sed -i
+              "s/past_key_values.seen_tokens/past_key_values.get_seq_length()/"
+              /opt/models/DeepSeek-V2-Lite/modeling_deepseek.py
+              && python /opt/santapp/exp/mla_benchmarking.py
               --model /opt/models/DeepSeek-V2-Lite
               --num-prompts 2
               --context-length 4096
