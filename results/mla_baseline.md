@@ -24,6 +24,7 @@ Each subtask is scored from `0.0` to `1.0`, where `1.0` is the maximum score.
 |---|---|---:|---:|---:|---:|---:|---:|
 | Youtu-LLM-2B | 20 prompts/task, 8192 context, FP16 | 1.00 | 0.85 | 0.95 | 0.245 | 0.07 | 0.10 |
 | Youtu-LLM-2B approximate | 20 prompts/task, 8192 context, BF16, top-k clustered attention, cluster size 16, KV budget 128, recent window 64 | 0.85 | 0.70 | 0.60 | 0.125 | 0.08 | 0.10 |
+| DeepSeek-V2-Lite | 20 prompts/task, 8192 context, FP16 | 1.00 | 0.95 | 0.975 | 0.365 | 0.68 | 0.50 |
 | DeepSeek-V2-Lite | 20 prompts/task, 8192 context, NF4 4-bit with FP16 compute | 1.00 | 0.90 | 0.925 | 0.435 | 0.58 | 0.40 |
 | Youtu-LLM-2B smoke | 2 prompts/task, 8192 context, FP16 | 1.00 | 1.00 | 1.00 | 0.05 | 0.10 | 0.00 |
 | DeepSeek-V2-Lite smoke | 2 prompts/task, 4096 context, NF4 4-bit, one 32 GB V100 | 1.00 | 1.00 | 0.50 | 0.80 | 0.70 | 0.00 |
@@ -46,7 +47,11 @@ is not a controlled model comparison against the Youtu baseline.
 The completed DeepSeek-V2-Lite NF4 experiment evaluated 120 samples in total
 on 32 GB V100 GPUs. Its unweighted mean across the evaluated six-task subset is
 approximately `0.707`. This is a quantized baseline; the separately submitted
-FP16 experiment is not included in this row unless it completes.
+FP16 experiment is reported separately.
+
+The completed DeepSeek-V2-Lite FP16 experiment also evaluated 120 samples in
+total. It ran on an NVIDIA L40S with 46 GB of GPU memory. Its unweighted mean
+across the evaluated six-task subset is `0.745`.
 
 ## Unevaluated RULER Tasks
 
