@@ -1,0 +1,12 @@
+# Local CUDA experiment environment.
+# The container Dockerfiles intentionally keep their own older, pinned stacks.
+torch==2.11.0
+transformers==5.12.1
+accelerate
+bitsandbytes
+lm-eval[hf,ruler]
+numpy
+scikit-learn
+matplotlib
+jupyter
+ipykernel

@@ -23,6 +23,7 @@ Each subtask is scored from `0.0` to `1.0`, where `1.0` is the maximum score.
 | Model | Experiment configuration | `niah_single_2` | `niah_multikey_2` | `niah_multiquery` | `ruler_cwe` | `ruler_vt` | `ruler_qa_hotpot` |
 |---|---|---:|---:|---:|---:|---:|---:|
 | Youtu-LLM-2B | 20 prompts/task, 8192 context, FP16 | 1.00 | 0.85 | 0.95 | 0.245 | 0.07 | 0.10 |
+| Youtu-LLM-2B approximate | 20 prompts/task, 8192 context, BF16, top-k clustered attention, cluster size 16, KV budget 128, recent window 64 | 0.85 | 0.70 | 0.60 | 0.125 | 0.08 | 0.10 |
 | DeepSeek-V2-Lite | 20 prompts/task, 8192 context, NF4 4-bit with FP16 compute | 1.00 | 0.90 | 0.925 | 0.435 | 0.58 | 0.40 |
 | Youtu-LLM-2B smoke | 2 prompts/task, 8192 context, FP16 | 1.00 | 1.00 | 1.00 | 0.05 | 0.10 | 0.00 |
 | DeepSeek-V2-Lite smoke | 2 prompts/task, 4096 context, NF4 4-bit, one 32 GB V100 | 1.00 | 1.00 | 0.50 | 0.80 | 0.70 | 0.00 |
@@ -32,6 +33,12 @@ evaluated 120 samples in total: 6 tasks with 20 prompts per task. The two smoke
 tests contain only two prompts per task and are intended primarily to validate
 the execution path. Their scores have high variance and should not be compared
 directly with the 20-prompt baseline.
+
+The Youtu approximate-attention experiment also evaluated 120 samples in total
+and has an unweighted mean of approximately `0.409` across the six-task subset,
+compared with approximately `0.536` for the dense Youtu baseline. It retains
+the dense baseline score on HotpotQA, slightly improves variable tracking, and
+loses accuracy on the three retrieval tasks and common-word extraction.
 
 The DeepSeek smoke test also differs in context length and quantization, so it
 is not a controlled model comparison against the Youtu baseline.

@@ -1,0 +1,9 @@
+# The local experiment environment is large and must never enter a Docker
+# build context. Existing Dockerfiles install their own pinned dependencies.
+.venv-exp/
+
+# Local caches and repository metadata are not used by image builds.
+.git/
+data/ruler/
+**/__pycache__/
+*.py[cod]
