@@ -37,50 +37,31 @@ import torch
 from lm_eval import evaluator
 from lm_eval.loggers import EvaluationTracker
 from lm_eval.models.huggingface import HFLM
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+)
 
 try:
     from .mla_benchmarking import DEFAULT_TASKS
-    from .mla_santapp import (
-        MODEL_ID,
-        ApproximateConfig,
-        YoutuApproximateAttention,
+    from .santapp import (
+        patch_deepseek_v2_attention,
+        patch_youtu_attention,
+        unpatch_deepseek_v2_attention,
+        unpatch_youtu_attention,
     )
 except ImportError:
     from mla_benchmarking import DEFAULT_TASKS
-    from mla_santapp import (
-        MODEL_ID,
-        ApproximateConfig,
-        YoutuApproximateAttention,
+    from santapp import (
+        patch_deepseek_v2_attention,
+        patch_youtu_attention,
+        unpatch_deepseek_v2_attention,
+        unpatch_youtu_attention,
     )
 
-class ApproximateYoutuHFLM(HFLM):
-    """Use the batch-one custom generator for lm-eval generation requests."""
 
-    def __init__(self, experiment: YoutuApproximateAttention, **kwargs):
-        self.experiment = experiment
-        super().__init__(**kwargs)
-
-    def _model_generate(
-        self,
-        context: torch.Tensor,
-        max_length: int,
-        stop: list[str],
-        **generation_kwargs,
-    ) -> torch.Tensor:
-        """Generate from input ``context`` shaped [1, prompt_tokens]."""
-        if context.shape[0] != 1:
-            raise ValueError("Approximate Youtu benchmark requires batch size 1.")
-        new_tokens = max_length - context.shape[1]
-        if new_tokens <= 0:
-            return context
-        generated = self.experiment.generate(context, new_tokens)
-        generated_tensor = torch.tensor(
-            generated,
-            dtype=context.dtype,
-            device=context.device,
-        )[None]
-        return torch.cat((context, generated_tensor), dim=1)
+MODEL_ID = "tencent/Youtu-LLM-2B"
 
 
 def load_hotpotqa(path: Path) -> tuple[list[dict], list[str]]:
@@ -162,7 +143,17 @@ def parse_args() -> argparse.Namespace:
     """Parse reproducible six-task benchmark settings."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default=MODEL_ID)
-    parser.add_argument("--mode", choices=("dense", "topk"), default="topk")
+    parser.add_argument(
+        "--architecture",
+        choices=("youtu", "deepseek-v2"),
+        default="youtu",
+        help="Select the model-specific MLA projection and RoPE adapter.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("dense", "topk", "guided", "santa", "uniform"),
+        default="guided",
+    )
     parser.add_argument("--num-prompts", type=int, default=20)
     parser.add_argument("--context-length", type=int, default=8192)
     parser.add_argument("--tasks", nargs="+", default=list(DEFAULT_TASKS))
@@ -170,6 +161,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--token-budget", type=int, default=128)
     parser.add_argument("--recent-window", type=int, default=64)
     parser.add_argument("--kmeans-iterations", type=int, default=20)
+    parser.add_argument(
+        "--dtype", choices=("float16", "bfloat16"), default="bfloat16"
+    )
+    parser.add_argument(
+        "--load-in-4bit",
+        action="store_true",
+        help="Load NF4 weights for 32GB GPUs such as V100.",
+    )
     parser.add_argument(
         "--hotpot-data",
         type=Path,
@@ -195,6 +194,10 @@ def main() -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("A CUDA GPU is required.")
 
+    # Guided/SANTA sampling uses torch.multinomial; keep runs reproducible.
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+
     RULER_DATA_DIR.mkdir(parents=True, exist_ok=True)
     args.output.mkdir(parents=True, exist_ok=True)
     os.environ["HF_DATASETS_CACHE"] = str(
@@ -203,24 +206,48 @@ def main() -> None:
     if "ruler_qa_hotpot" in args.tasks:
         install_hotpot_loader(args.hotpot_data)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    model_dtype = {
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+    }[args.dtype]
+    quantization_config = None
+    if args.load_in_4bit:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=model_dtype,
+        )
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
-        dtype=torch.bfloat16,
+        dtype=model_dtype,
         attn_implementation="sdpa",
-    ).to("cuda").eval()
-    approximate_config = ApproximateConfig(
-        mode=args.mode,
-        cluster_size=args.cluster_size,
-        token_budget=args.token_budget,
-        recent_window=args.recent_window,
-        kmeans_iterations=args.kmeans_iterations,
+        trust_remote_code=True,
+        quantization_config=quantization_config,
+        device_map={"": "cuda:0"} if args.load_in_4bit else None,
     )
-    experiment = YoutuApproximateAttention(model, approximate_config)
-    experiment.patch()
+    if not args.load_in_4bit:
+        model = model.to("cuda")
+    model = model.eval()
+    model.config.mode = args.mode
+    model.config.santapp_samples_per_head = args.token_budget
+    model.config.santapp_recent_window = args.recent_window
+    model.config.santapp_group_size = args.cluster_size
+    model.config.santapp_cluster_feature = "key"
+    model.config.santapp_probe_count = 64
+    model.config.santapp_probe_start_fraction = 0.75
+    model.config.santapp_cluster_seed = 0
+    model.config.santapp_kmeans_iterations = args.kmeans_iterations
+    if args.architecture == "deepseek-v2":
+        patch_attention = patch_deepseek_v2_attention
+        unpatch_attention = unpatch_deepseek_v2_attention
+    else:
+        patch_attention = patch_youtu_attention
+        unpatch_attention = unpatch_youtu_attention
+    patch_attention(model)
 
-    lm = ApproximateYoutuHFLM(
-        experiment=experiment,
+    lm = HFLM(
         pretrained=model,
         tokenizer=tokenizer,
         backend="causal",
@@ -242,6 +269,13 @@ def main() -> None:
             metadata={
                 "max_seq_lengths": [args.context_length],
                 "pretrained": args.model,
+                "cluster_algorithm": "notebook_minibatch",
+                "cluster_feature": model.config.santapp_cluster_feature,
+                "attention_mode": args.mode,
+                "torch_seed": 0,
+                "architecture": args.architecture,
+                "dtype": args.dtype,
+                "load_in_4bit": args.load_in_4bit,
             },
         )
         if results is None:
@@ -251,7 +285,7 @@ def main() -> None:
         for task_name, task_samples in samples.items():
             tracker.save_results_samples(task_name, task_samples)
     finally:
-        experiment.unpatch()
+        unpatch_attention(model)
 
     print(f"Results written to {args.output}", flush=True)
 

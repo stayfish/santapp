@@ -1,0 +1,23 @@
+FROM ghcr.io/stayfish/santapp-benchmark:deepseek-diagnostic-v3
+
+# The DeepSeek approximate-attention adapter targets the built-in
+# Transformers 5.12 DeepseekV2Attention and DynamicCache interfaces.
+RUN python -m pip install --no-cache-dir --upgrade \
+      "transformers==5.12.1" \
+      "tokenizers>=0.22,<0.23" \
+      "accelerate" \
+      "bitsandbytes>=0.45" \
+      "lm-eval[hf,ruler]" \
+      "numpy"
+
+COPY exp/mla_benchmarking.py /opt/santapp/exp/mla_benchmarking.py
+COPY exp/mla_santapp_benchmark.py /opt/santapp/exp/mla_santapp_benchmark.py
+COPY exp/santapp /opt/santapp/exp/santapp
+
+ENV BENCHMARK_ROOT=/runtime \
+    HF_HUB_ENABLE_HF_TRANSFER=0 \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+WORKDIR /opt/santapp

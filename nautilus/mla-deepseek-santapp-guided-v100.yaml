@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mla-deepseek-santapp-guided-v100
+  namespace: ucsb-opus-lab
+spec:
+  completionMode: Indexed
+  completions: 6
+  parallelism: 6
+  backoffLimitPerIndex: 0
+  maxFailedIndexes: 6
+  activeDeadlineSeconds: 172800
+  template:
+    metadata:
+      labels:
+        app: mla-deepseek-santapp-guided-v100
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nvidia.com/gpu.product
+                    operator: In
+                    values:
+                      - Tesla-V100-SXM2-32GB
+      containers:
+        - name: benchmark
+          image: ghcr.io/stayfish/santapp-benchmark:deepseek-santapp-v1
+          imagePullPolicy: Always
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              tasks=(
+                niah_single_2
+                niah_multikey_2
+                niah_multiquery
+                ruler_vt
+                ruler_cwe
+                ruler_qa_hotpot
+              )
+              task="${tasks[$JOB_COMPLETION_INDEX]}"
+              exec python -m exp.mla_santapp_benchmark \
+                --architecture deepseek-v2 \
+                --model /opt/models/DeepSeek-V2-Lite \
+                --mode guided \
+                --dtype float16 \
+                --load-in-4bit \
+                --num-prompts 20 \
+                --context-length 8192 \
+                --cluster-size 16 \
+                --token-budget 128 \
+                --recent-window 64 \
+                --kmeans-iterations 20 \
+                --tasks "$task" \
+                --output "/runtime/results/deepseek-guided-v100/$task"
+          env:
+            - {name: BENCHMARK_ROOT, value: /runtime}
+            - {name: HF_HOME, value: /runtime/huggingface}
+            - {name: HF_HUB_ENABLE_HF_TRANSFER, value: "0"}
+            - {name: HF_HUB_OFFLINE, value: "1"}
+            - {name: TRANSFORMERS_OFFLINE, value: "1"}
+            - {name: PYTORCH_CUDA_ALLOC_CONF, value: "expandable_segments:True"}
+          resources:
+            requests: {cpu: "4", memory: 48Gi, ephemeral-storage: 15Gi, nvidia.com/gpu: "1"}
+            limits: {cpu: "4", memory: 48Gi, ephemeral-storage: 15Gi, nvidia.com/gpu: "1"}
+          volumeMounts:
+            - {name: runtime, mountPath: /runtime}
+            - {name: dshm, mountPath: /dev/shm}
+      volumes:
+        - {name: runtime, emptyDir: {sizeLimit: 15Gi}}
+        - {name: dshm, emptyDir: {medium: Memory, sizeLimit: 8Gi}}
