@@ -74,21 +74,31 @@ spec:
             requests: {cpu: "4", memory: 64Gi, ephemeral-storage: 15Gi, nvidia.com/gpu: "1"}
             limits: {cpu: "4", memory: 64Gi, ephemeral-storage: 15Gi, nvidia.com/gpu: "1"}
           volumeMounts:
-            - {name: code, mountPath: /opt/santapp/exp}
+            - name: benchmark-code
+              mountPath: /opt/santapp/exp/mla_benchmarking.py
+              subPath: mla_benchmarking.py
+            - name: benchmark-code
+              mountPath: /opt/santapp/exp/mla_santapp_benchmark.py
+              subPath: mla_santapp_benchmark.py
+            - {name: santapp-code, mountPath: /opt/santapp/exp/santapp}
             - {name: runtime, mountPath: /runtime}
             - {name: dshm, mountPath: /dev/shm}
       volumes:
-        - name: code
+        - name: benchmark-code
           configMap:
             name: deepseek-santapp-code
             items:
               - {key: mla_benchmarking.py, path: mla_benchmarking.py}
               - {key: mla_santapp_benchmark.py, path: mla_santapp_benchmark.py}
-              - {key: santapp_init.py, path: santapp/__init__.py}
-              - {key: attention.py, path: santapp/attention.py}
-              - {key: clustering.py, path: santapp/clustering.py}
-              - {key: config.py, path: santapp/config.py}
-              - {key: deepseek_attention.py, path: santapp/deepseek_attention.py}
-              - {key: minibatch_kmeans.py, path: santapp/minibatch_kmeans.py}
+        - name: santapp-code
+          configMap:
+            name: deepseek-santapp-code
+            items:
+              - {key: santapp_init.py, path: __init__.py}
+              - {key: attention.py, path: attention.py}
+              - {key: clustering.py, path: clustering.py}
+              - {key: config.py, path: config.py}
+              - {key: deepseek_attention.py, path: deepseek_attention.py}
+              - {key: minibatch_kmeans.py, path: minibatch_kmeans.py}
         - {name: runtime, emptyDir: {sizeLimit: 15Gi}}
         - {name: dshm, emptyDir: {medium: Memory, sizeLimit: 8Gi}}
